@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TCS Production Workflow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0d0e12; --bg-2:#13141a; --panel:#181a22; --panel-2:#1f222c;
+    --line:#2b2e3a; --line-soft:#222530;
+    --ink:#eceef3; --muted:#9094a3; --muted-2:#b4b8c5;
+    --gold:#cfa84e; --gold-soft:#e6cd8a;
+    --task:#5b9bd5; --rule:#c2603f; --check:#4fa37a; --stake:#9b7dc4; --approve:#cfa84e;
+    --monday:#6c8cff; --monday-soft:#9fb2ff;
+    --serif:'Fraunces',Georgia,serif; --sans:'Archivo',system-ui,sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;line-height:1.5}
+  ::selection{background:var(--gold);color:var(--bg)}
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-track{background:var(--bg)}
+  ::-webkit-scrollbar-thumb{background:var(--line);border-radius:5px}
+
+  /* ===== TOP BAR ===== */
+  .topbar{position:sticky;top:0;z-index:100;background:rgba(13,14,18,.9);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+  .topbar-in{max-width:1280px;margin:0 auto;padding:0 28px;height:66px;display:flex;align-items:center;justify-content:space-between;gap:20px}
+  .brand{font-family:var(--serif);font-size:20px;font-weight:500;white-space:nowrap}
+  .brand b{color:var(--gold);font-weight:500}
+  .brand span{color:var(--muted);font-family:var(--sans);font-size:11px;letter-spacing:.18em;text-transform:uppercase;display:block;margin-top:1px}
+  .top-actions{display:flex;gap:10px;align-items:center}
+  .mini{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);padding:9px 15px;border-radius:3px;cursor:pointer;transition:.25s;background:none;font-family:var(--sans);font-weight:600}
+  .mini:hover{border-color:var(--gold);color:var(--gold)}
+
+  /* ===== HERO ===== */
+  .hero{max-width:1280px;margin:0 auto;padding:74px 28px 50px}
+  .hero .eyebrow{font-size:12px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);display:flex;align-items:center;gap:14px;margin-bottom:26px}
+  .hero .eyebrow::before{content:"";width:44px;height:1px;background:var(--gold)}
+  .hero h1{font-family:var(--serif);font-weight:400;font-size:clamp(36px,5.4vw,68px);line-height:1.02;letter-spacing:-.015em;max-width:18ch}
+  .hero h1 em{font-style:italic;color:var(--gold-soft)}
+  .hero p{margin-top:24px;font-size:17px;color:var(--muted-2);max-width:66ch}
+  .legend{margin-top:34px;display:flex;flex-wrap:wrap;gap:8px 22px}
+  .legend i{font-style:normal;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px;letter-spacing:.03em}
+  .legend i b{width:10px;height:10px;border-radius:2px;display:inline-block}
+
+  /* ===== PHASE NAV ===== */
+  .phasenav{position:sticky;top:66px;z-index:90;background:var(--bg-2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .phasenav-in{max-width:1280px;margin:0 auto;padding:0 28px;display:flex;gap:0;overflow-x:auto}
+  .pnav{flex:1;min-width:150px;padding:18px 16px;background:none;border:none;border-right:1px solid var(--line-soft);cursor:pointer;text-align:left;transition:.3s;position:relative;font-family:var(--sans)}
+  .pnav:last-child{border-right:none}
+  .pnav:hover{background:var(--panel)}
+  .pnav .pn{font-family:var(--serif);font-style:italic;color:var(--gold);font-size:12px}
+  .pnav .pt{font-size:15px;font-weight:600;color:var(--muted-2);margin-top:4px;letter-spacing:.01em}
+  .pnav.active{background:var(--panel-2)}
+  .pnav.active .pt{color:var(--ink)}
+  .pnav.active::after{content:"";position:absolute;bottom:0;left:0;right:0;height:3px;background:var(--gold)}
+
+  /* ===== MAIN ===== */
+  main{max-width:1280px;margin:0 auto;padding:54px 28px 90px}
+  .phase-header{margin-bottom:36px;display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:16px;border-bottom:1px solid var(--line);padding-bottom:24px}
+  .phase-header .ph-left .ph-no{font-family:var(--serif);font-style:italic;color:var(--gold);font-size:15px}
+  .phase-header h2{font-family:var(--serif);font-weight:400;font-size:clamp(28px,3.6vw,44px);line-height:1.05;margin-top:6px}
+  .phase-header .ph-desc{color:var(--muted);font-size:14px;max-width:44ch;text-align:right}
+
+  .controls{display:flex;gap:10px;margin-bottom:24px}
+  .ctl{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:none;border:1px solid var(--line);padding:8px 14px;border-radius:3px;cursor:pointer;transition:.25s;font-family:var(--sans);font-weight:600}
+  .ctl:hover{border-color:var(--gold);color:var(--gold)}
+
+  /* ===== STEP CARD ===== */
+  .step{background:var(--panel);border:1px solid var(--line);border-radius:6px;margin-bottom:14px;overflow:hidden;transition:.3s}
+  .step.open{border-color:var(--gold)}
+  .step-head{display:flex;align-items:center;gap:18px;padding:22px 26px;cursor:pointer;transition:.25s}
+  .step-head:hover{background:var(--panel-2)}
+  .step-idx{font-family:var(--serif);font-style:italic;color:var(--gold);font-size:17px;width:34px;flex-shrink:0}
+  .step-title{flex-grow:1}
+  .step-title h3{font-family:var(--serif);font-weight:500;font-size:21px;line-height:1.15}
+  .step-title .sub{font-size:12px;color:var(--muted);letter-spacing:.04em;margin-top:4px}
+  .step-board{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);border:1px solid rgba(207,168,78,.35);padding:5px 10px;border-radius:3px;white-space:nowrap}
+  .step-toggle{font-size:24px;color:var(--gold);transition:.4s;line-height:1;flex-shrink:0;width:24px;text-align:center}
+  .step.open .step-toggle{transform:rotate(45deg)}
+
+  .step-body{max-height:0;overflow:hidden;transition:max-height .55s cubic-bezier(.16,1,.3,1)}
+  .grid{display:grid;grid-template-columns:1.25fr 1fr;gap:0;border-top:1px solid var(--line)}
+  .col{padding:26px 28px}
+  .col.left{border-right:1px solid var(--line)}
+  .block{margin-bottom:28px}
+  .block:last-child{margin-bottom:0}
+  .block h4{font-size:11px;letter-spacing:.16em;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:9px}
+  .block h4 b{width:10px;height:10px;border-radius:2px}
+  .block ul{list-style:none}
+  .block li{font-size:14px;color:var(--muted-2);padding:8px 0 8px 20px;position:relative;border-bottom:1px solid var(--line-soft)}
+  .block li:last-child{border-bottom:none}
+  .block li::before{content:"";position:absolute;left:2px;top:15px;width:7px;height:7px;border-radius:50%;background:var(--mark,var(--gold));opacity:.7}
+  .block.check li::before{content:"✓";background:none;color:var(--check);font-size:12px;top:8px;left:0;width:auto;height:auto;opacity:1;font-weight:700}
+  .pills{display:flex;flex-wrap:wrap;gap:8px}
+  .pill{font-size:12px;letter-spacing:.03em;color:var(--muted-2);background:var(--panel-2);border:1px solid var(--line);padding:7px 12px;border-radius:3px}
+  .pill.gold{border-color:rgba(207,168,78,.4);color:var(--gold-soft);background:rgba(207,168,78,.06)}
+  @media(max-width:880px){.grid{grid-template-columns:1fr}.col.left{border-right:none;border-bottom:1px solid var(--line)}.phase-header .ph-desc{text-align:left}}
+
+  /* ===== MONDAY TOOL BAND ===== */
+  .toolband{margin-top:4px;background:linear-gradient(180deg,#141620,#11131b);border:1px solid var(--line);border-left:3px solid var(--monday);border-radius:6px;padding:20px 24px}
+  .toolband-head{display:flex;align-items:center;gap:11px;margin-bottom:16px;flex-wrap:wrap}
+  .toolband-head .mlogo{width:18px;height:18px;border-radius:4px;background:conic-gradient(from 0deg,#ff3d57 0 33%,#ffcb00 33% 66%,#00d647 66% 100%);flex-shrink:0}
+  .toolband-head h5{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted-2);font-weight:700}
+  .toolband-head .tb-board{font-family:var(--serif);font-size:17px;color:var(--monday-soft);font-weight:500}
+  .tb-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:18px}
+  .tb-cell h6{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+  .tb-pipe{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+  .tb-stage{font-size:12px;color:var(--ink);background:var(--panel-2);border:1px solid var(--line);padding:5px 10px;border-radius:3px;white-space:nowrap}
+  .tb-stage.done{border-color:rgba(79,163,122,.5);color:#7fd0a6}
+  .tb-arrow{color:var(--monday);font-size:13px;opacity:.7}
+  .tb-chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted-2);background:var(--panel-2);border:1px solid var(--line);padding:5px 11px;border-radius:20px;margin:0 6px 6px 0}
+  .tb-chip b{width:7px;height:7px;border-radius:50%;background:var(--monday)}
+  .tb-auto{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+  .tb-btn{font-size:11px;letter-spacing:.04em;color:#0d0e12;background:linear-gradient(180deg,#ffd23f,#f5b800);padding:5px 11px;border-radius:4px;font-weight:700;white-space:nowrap}
+  .tb-btn.alt{background:linear-gradient(180deg,#6c8cff,#4f6fe0);color:#fff}
+
+  /* ===== SYSTEM MAP TAB ===== */
+  .sys-intro{max-width:70ch;color:var(--muted-2);font-size:16px;margin-bottom:40px}
+  .sys-flowline{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:46px;padding:22px;background:var(--bg-2);border:1px solid var(--line);border-radius:8px;justify-content:center}
+  .sys-node{font-size:13px;color:var(--ink);background:var(--panel);border:1px solid var(--monday);padding:10px 16px;border-radius:5px;font-weight:600}
+  .sys-flowline .tb-arrow{font-size:18px}
+  .board-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:18px}
+  .bcard{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:24px;transition:.3s}
+  .bcard:hover{border-color:var(--monday);transform:translateY(-3px)}
+  .bcard-top{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+  .bcard-top .mlogo{width:16px;height:16px;border-radius:4px;background:conic-gradient(from 0deg,#ff3d57 0 33%,#ffcb00 33% 66%,#00d647 66% 100%)}
+  .bcard h4{font-family:var(--serif);font-size:20px;font-weight:500}
+  .bcard .role{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--monday-soft);margin-bottom:14px}
+  .bcard p{font-size:13.5px;color:var(--muted-2);margin-bottom:14px}
+  .bcard .bmeta{font-size:12px;color:var(--muted);border-top:1px solid var(--line-soft);padding-top:12px}
+  .bcard .bmeta b{color:var(--muted-2);font-weight:600}
+  .sys-foot{margin-top:40px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px}
+  .sys-foot .ff{background:var(--bg-2);border:1px solid var(--line);border-radius:6px;padding:20px}
+  .sys-foot .ff b{display:block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--monday-soft);margin-bottom:8px}
+  .sys-foot .ff p{font-size:13px;color:var(--muted-2)}
+
+  /* responsibility split note */
+  .split{background:var(--bg-2);border:1px solid var(--line);border-radius:6px;padding:30px 32px;margin-top:40px}
+  .split h4{font-family:var(--serif);font-size:20px;font-weight:500;margin-bottom:18px;color:var(--gold-soft)}
+  .split-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:22px}
+  .split-grid div p{font-size:13px;color:var(--muted-2)}
+  .split-grid div b{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:7px}
+
+  footer{border-top:1px solid var(--line);background:var(--bg-2);text-align:center;padding:34px;color:var(--muted);font-size:12px;letter-spacing:.1em}
+  footer b{color:var(--gold-soft);font-family:var(--serif);font-style:italic;font-weight:400}
+
+  @media print{
+    .topbar,.phasenav,.controls,.step-toggle{display:none}
+    .step-body{max-height:none!important}.step{break-inside:avoid;border-color:#ccc}
+    body{background:#fff;color:#111}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-in">
+    <div class="brand">The Creator <b>Space</b><span>Production Workflow System</span></div>
+    <div class="top-actions">
+      <button class="mini" onclick="openAll()">Expand all</button>
+      <button class="mini" onclick="closeAll()">Collapse all</button>
+      <button class="mini" onclick="window.print()">Print / PDF</button>
+    </div>
+  </div>
+</div>
+
+<section class="hero">
+  <div class="eyebrow">The TCS Production Workflow</div>
+  <h1>One disciplined path from <em>idea to delivery.</em></h1>
+  <p>Every production we run moves through the same structured workflow. Each step below carries its own tasks, governing rules, completion checklist, approval layer, and named stakeholders — so the internal team, freelancers, and clients all work from a single, transparent source of truth.</p>
+  <div class="legend">
+    <i><b style="background:var(--task)"></b>Tasks</i>
+    <i><b style="background:var(--rule)"></b>Rules</i>
+    <i><b style="background:var(--check)"></b>Checklist</i>
+    <i><b style="background:var(--approve)"></b>Approval Layer</i>
+    <i><b style="background:var(--stake)"></b>Stakeholders</i>
+    <i><b style="background:var(--monday)"></b>monday.com tooling</i>
+  </div>
+</section>
+
+<nav class="phasenav">
+  <div class="phasenav-in" id="phasenav"></div>
+</nav>
+
+<main id="main"></main>
+
+<footer>
+  THE CREATOR SPACE &nbsp;·&nbsp; <b>Idea → Development → Preparation → Shooting → Post → Wrap</b> &nbsp;·&nbsp; Single source of truth · No verbal-only decisions · Every step logged
+</footer>
+
+<script>
+/* =================== TCS WORKFLOW DATA (from TCS_WORKFLOW) =================== */
+const DATA = [
+{
+  phase:"Development", no:"Phase 1", desc:"From a pool of ideas to a greenlit, client-approved project.",
+  steps:[
+    {title:"Vision & Approach", sub:"Define the core creative direction", board:"Resources > Director Treatment / Moodboard",
+     tasks:["Define the core vision and purpose of the project","Establish the tone, mood, and emotional direction","Identify target audience and viewing experience","Align on format, platform, and content style","Develop visual references and inspiration (moodboards)","Explore narrative direction / storytelling approach","Define key themes and messaging","Ensure alignment between creative, production, and business goals"],
+     rules:["Vision must be clear, concise, and communicable","All creative choices must serve the core concept","References must be specific and intentional","Direction must be achievable within budget and capability","No progression without internal alignment on vision","Any shift in direction requires revalidation of feasibility","Vision must align with client brief and platform requirements","Final output must be documented (deck / moodboard / written direction)"],
+     check:["Clear and approved vision statement","Defined tone and mood","Identified target audience","Agreed visual direction","Narrative direction coherent and aligned","References relevant and consistent","All stakeholders creatively aligned"],
+     approve:["CEO","Client (if required)"], stake:["Director (if available)","CEO / Development Producer","Writer / Idea Initiator"]},
+    {title:"Director Selection", sub:"Shortlist, assess and confirm the director", board:"Monday.com Board",
+     tasks:["Identify and shortlist potential directors based on project needs","Review previous work, reels, and portfolios","Assess creative compatibility with project vision","Evaluate storytelling style and tone alignment","Conduct meetings / interviews with candidates","Request director's input or vision (if required)","Compare candidates on creative, experience, and fit","Align internally on preferred director","Present shortlisted directors to client (if applicable)","Finalize director selection"],
+     rules:["No director approached or confirmed without internal alignment","Selection based on creative fit first, not just reputation","Budget and availability confirmed before final selection","Client must be presented with clear, curated options"],
+     check:["Style matches project tone and vision","Strong storytelling and visual capability","Relevant experience in similar formats / genres","Clear understanding of the project","Good communication and collaboration approach","Availability aligns with timeline","Budget expectations within range","Positive reputation / reliability"],
+     approve:["CEO","Client"], stake:["CEO","COO","Client (if suggested)"]},
+    {title:"Vision Development — Key Creative HODs", sub:"Build the treatment and select department heads", board:"Resources > Director Treatment - Moodboard",
+     tasks:["Expand the approved vision into detailed creative direction","Collaborate with the director on their interpretation","Develop the director's treatment (visual + narrative)","Define visual language (camera style, framing, movement)","Establish color palette, lighting style, aesthetic","Build moodboards and visual references","Refine story structure / key beats","Explore casting approach and character direction","Align on locations and world-building","Integrate music, sound, and pacing direction","Identify & shortlist creative HODs (DOP, Designer, Stylist…)","Secure approvals and confirm HOD onboarding"],
+     rules:["Director's treatment must be fully developed and documented","All creative elements must serve a unified vision","References must be intentional and directly relevant","Vision must be translatable into production","Budget and logistics considered in all creative decisions","Internal alignment mandatory before client presentation","HODs selected on creative fit first, then experience","No HOD confirmed without director alignment","Any replacement post-confirmation requires re-evaluation"],
+     check:["Director's vision clear and well-articulated","Visual style consistent and intentional","Tone and mood aligned with original concept","Story flow / key moments defined","Creative direction achievable within budget","All departments can interpret the vision clearly","HODs strongly aligned with vision","HOD availability & fees confirmed within budget"],
+     approve:["CEO","COO"], stake:["Producer","COO","Director"]},
+    {title:"Script Development", sub:"Revise, approve, and lock the script", board:"Google Drive & Monday workspace",
+     tasks:["Continue script development and revisions","Secure script approval from the client / TV where required","Prepare the script breakdown","Issue the latest approved version with revision control","Complete initial breakdown","Maintain script revision log and distribution log"],
+     rules:["All revisions must be tracked and logged","Client/platform approval overrides internal drafts (documented)","Any change after lock requires formal re-approval cycle","Story clarity and intent must not be diluted","Visual development must reflect latest approved script","Planning cannot proceed on unapproved script versions","Final script lock = foundation for all departments","Any post-lock change needs a note: what changed, who approved, who's affected"],
+     check:["Script revisions completed and consolidated","Final version clearly labeled and version-controlled","Client / platform approval obtained (if required)","Script breakdown completed and reviewed","Director's treatment aligned with script","Moodboard reflects final script direction","'Script lock' status clearly confirmed","Approved script distributed to all departments"],
+     approve:["CEO","AD"], stake:["Script Development","CEO","AD"]},
+    {title:"Moodboard", sub:"Translate the vision into a presentation-ready visual", board:"Project Workspace > Resources > Creative Resources > Moodboard",
+     tasks:["Gather visual references aligned with the project vision","Define color palette, lighting, and tone","Explore textures, environments, and atmospheres","Reference camera style, framing, and composition","Align on character styling and overall look","Curate film / photography / art references","Organize visuals into a clear, structured moodboard","Review and refine with director and creative team","Prepare moodboard for internal / client presentation"],
+     rules:["Moodboard must clearly translate the vision into visuals","All references intentional and project-specific","Visual direction must be cohesive and unified","Must align with director's treatment and concept","Should be achievable within production and budget","No progression without internal creative alignment","Final moodboard must be presentation-ready"],
+     check:["Visual direction clear and cohesive","Color palette and lighting consistent","References relevant and intentional","Mood reflects tone and emotion of the project","No conflicting styles or mixed directions","Board well-organized and easy to understand","Aligned with director's vision","Ready for presentation"],
+     approve:["Director","CEO"], stake:["Director","Production Designer","Stylist"]},
+    {title:"Strategic Approval", sub:"Greenlight: GO / REVISE / REJECT", board:"Project Workspace (Resources – Scouting – Casting)",
+     tasks:["Review and validate proposed cast direction","Approve or reject key location strategy","Evaluate core creative concepts against strategy","Validate design direction","Ensure selections align with budget, tone, feasibility","Identify logistical, financial, reputational, creative risks","Confirm all choices serve story and audience","Narrow to preferred direction or shortlist","Issue strategic approval or request revision"],
+     rules:["No casting, location, or design commitment without strategic approval","All choices must serve the approved concept and audience","Must stay within agreed budget and production scale","All options must be realistic and executable","Any major deviation requires re-approval","Approval is about alignment and feasibility, not execution detail","All decisions documented with clear reasoning","Final output: a clear GO / REVISE / REJECT per category"],
+     check:["Cast aligns with character/story intent & feasibility","Locations match narrative + visual direction","Location logistics reviewed (access, permits, constraints)","Concepts align with approved strategic direction","Design direction consistent with tone and moodboard","Budget alignment confirmed","Risks identified and documented","Final recommendation stated (APPROVE / REVISE / REJECT)"],
+     approve:["Executive Producers","Director","Client"], stake:["Location Manager / PM","Finance Manager / PFM","Producer","Production Designer / Stylist","Marketing & PR"]}
+  ]
+},
+{
+  phase:"Preparation", no:"Phase 2", desc:"Soft prep through hard prep: budget, kickoff, casting, crew, permits, logistics.",
+  steps:[
+    {title:"Budget Finalization & Approvals", sub:"Lock the internal budget basis", board:"Monday > Content Legal & Finance",
+     tasks:["Refine the working budget to approved scope, cast, crew, logistics","Confirm staffing, travel, accommodation, location assumptions","Align financial approval path for hires, suppliers, overages","Lock the internal budget basis before major prep commitments","Activate project-linked approvals (permits, facilitation)","Add cost-code structure, PO/invoice approval flow, payment responsibility"],
+     rules:["No budget approved without full department breakdown","All figures based on verified estimates, not assumptions","Contingency is mandatory — never removed or hidden","Any missing cost must be explicitly flagged","Budget must match the approved creative scope exactly","No creative expansion after lock without re-approval","All vendor costs must be traceable and documented","No informal or verbal-only pricing in final submission","Any major variance requires a revision cycle before approval","Final approval signed off by both production and finance","Budget approval = financial lock for execution phase"],
+     check:["Working budget refined to approved scope","Staffing / travel / location assumptions confirmed","Financial approval path aligned","Cost-code & PO/invoice flow added","Contingency present and protected","Production + finance sign-off secured"],
+     approve:["PFM / Producer","COO"], stake:["PFM / Producer","COO"]},
+    {title:"Project Kickoff & Workflow Setup", sub:"Activate the system, roles, and reporting", board:"Monday.com Board",
+     tasks:["Kickoff project meeting","Align on scope, timeline, milestones, priorities","Confirm core production team and points of contact","Activate workflow, roles, responsibilities, reporting","Activate communication flow, approval path, meeting plan","Set up Drive folders, shareable folder, document trackers","Activate budget workflow, hiring, Legal / HR / finance coordination","Align on immediate next steps before entering prep","Define a clear approval matrix across all areas"],
+     rules:["No production activity starts without formal kickoff approval","All departments operate from the same approved workflow system","Only one source of truth for files, scripts, documents","No unofficial communication chains for decisions","All changes logged — no verbal-only key updates","Budget baseline respected unless formally revised","Roles and responsibilities defined before execution","Escalation path always followed — no side approvals","No department operates independently of production structure","Any structural change after kickoff requires re-approval"],
+     check:["Scope, timeline, milestones aligned","Core team and contacts confirmed","Workflow, roles, reporting activated","Drive folders and trackers set up","Approval matrix defined","Communication & meeting plan live"],
+     approve:["COO"], stake:["TCS Executives","Project Managers & Coordinator","PFM","PM & Producers"]},
+    {title:"Casting & Talent Lock", sub:"Secure client cast approval and seal deals", board:"Monday.com Board",
+     tasks:["Prepare and present the cast approval presentation to TV / client","Conduct cast selection with Director and Producer","Secure client cast approval","Confirm talent availability and initial sealing deals","Complete security / appearance approval where required","For new talent, collect headshots, audition videos, forms","Run audition / selection discussions where needed","Move approved talent into onboarding and contract prep","Confirm usage, exclusivity, PR, social, fitting/training, conflicts"],
+     rules:["No talent locked without client / final approval","Casting must align with character, story, and audience","Availability confirmed before any approval is finalized","No verbal holds — all agreements documented","Rates and terms align with approved budget","No announcement before full approval + deal alignment","All talent pass required approvals (security/appearance)","Backup options exist for all key roles","Any change after cast lock requires re-approval","Decisions clearly documented and traceable"],
+     check:["Cast brief aligned with script and character","Shortlist prepared per role","Cast approval presentation ready","Auditions conducted / reviewed where required","Director + Producer aligned on selections","Client / platform cast approval secured","Availability confirmed (dates + conflicts)","Initial deal terms aligned","Security / appearance approvals completed","New talent materials collected","Backup options identified for key roles","Approved talent moved to onboarding + contract"],
+     approve:["Director","CEO","Client"], stake:["PM / PFM / Producer","Director (if applicable)"]},
+    {title:"Initial Crew List & Hiring Plan", sub:"Prioritize HODs, confirm and onboard crew", board:"Monday.com Board",
+     tasks:["Prepare the initial crew list with names and roles","Review internally against needs, priorities, budget","Submit list for TCS executive approval before confirmations","Arrange alignment meetings between closely-working depts (DoP/Gaffer)","Arrange cross-department meetings (Costume/Art) for visual alignment","Send onboarding links to approved crew","Maintain sent / onboarded tracking and follow up","Double-check EID, passport expiry, visa requirements"],
+     rules:["No hiring without budget alignment and approval","Prioritize key HODs before expanding crew","All hires match project scale and requirements","No over-hiring or duplicate roles","Availability confirmed before locking any crew","Rates stay within approved budget ranges","No informal/verbal hiring — all confirmations documented","Critical roles always have backup options","Any major crew change requires re-approval","No move to contract unless rate, dates, reporting line, docs confirmed"],
+     check:["Core crew structure defined","Priority HODs identified (Director, DP, Production, Art…)","Crew size aligned with budget and scale","Role descriptions and requirements outlined","Availability of key crew checked","Local vs external hires identified","Backup options for critical roles","Hiring timeline established","Initial crew list reviewed with leads","Approval-ready hiring plan prepared"],
+     approve:["COO & CEO"], stake:["COO + CEO"]},
+    {title:"Permits & Legal", sub:"Secure every permit, clearance and insurance", board:"Monday.com Board",
+     tasks:["Identify all required permits based on project scope","Secure ground filming permit & facilitation letter (TV)","Secure location permits and access approvals / gate passes","Obtain municipality / authority permits where required","Obtain police / traffic permits where required","Obtain drone permits (apply 3–4 weeks in advance)","Obtain special permits (stunts, weapons, SFX, animals, minors)","Confirm parking permits / unit base permissions","Arrange insurance documents","Maintain a complete permit pack in the shareable Drive","Maintain master clearance tracker (locations, releases, music, archive)"],
+     rules:["No permit = no filming","No entry to location without approved access","No drone / special activity without explicit approval","Expired or partial permits are invalid","All permits documented — no verbal approvals","Any change in scope requires re-approval","Permit conditions must be followed exactly on ground","Non-compliance = immediate stop of production","Guardian / safety supervisor / specialist sign-off where required"],
+     check:["Ground filming permit & facilitation letter (TV)","Location agreements & permits (malls, hotels, etc.)","Access approvals / gate passes","Municipality / police / traffic permits","Drone, SFX/fire, weapons, stunts, animal, minor permits","Parking, unit base, road closure approvals","Insurance documents approved","Health & safety compliance"],
+     approve:["Client","PM"], stake:["Production Coordinators","PM","Finance Manager"]},
+    {title:"Hard Prep — Logistics & Operations Setup", sub:"Lock locations, travel, accommodation, transport", board:"Resources > Logistics",
+     tasks:["Conduct location scouting with PM and Location Manager","Finalize location agreements & site requirements (green room, H&MU, base camp, video village…)","Conduct technical recce and gear check","Confirm hotel bookings and rooming requirements","Set up the main travel sheet and agency booking thread","Book flights and obtain confirmations","Collect passport details, visa status, ticket preferences","Communicate with hotel and share rooming list","Confirm transportation planning and driver onboarding via PM","Finalize catering deals and supply agreements","Confirm prep spaces for Costume and Hair & Makeup","Prepare merch and welcome letter, hotel distribution plan","Prepare base camp / parking / access maps and contact sheets"],
+     rules:["No location confirmed without signed agreement","All locations must meet full operational requirements","No travel bookings without confirmed passport / visa / dates","All bookings documented and centralized","Technical recce is mandatory before shoot","Logistics must align with schedule and budget","No last-minute bookings without approval","All vendors confirmed in writing","Any change in travel or location requires re-confirmation","Crew comfort and functionality are not optional"],
+     check:["Location scouting completed","Locations locked with agreements + site requirements","Technical recce completed","Hotels booked with confirmed rooming list","Travel sheet set up; flights booked + confirmed","Passport / visa / preferences collected","Transportation plan confirmed (vehicles + drivers)","Catering deals finalized","Prep spaces secured (Costume + H&MU)","Travel agency + hotel coordination completed","Merch + welcome packs prepared"],
+     approve:["Producer","PFM","COO"], stake:["Coordinators","1st AD","PM","PFM"]},
+    {title:"Scheduling & Preparation", sub:"Build the master schedule and final readiness", board:"Resource > Schedule",
+     tasks:["Build the overall prep and production schedule","Align key dates, milestones, departmental deadlines","Prepare the shooting schedule with 1st AD and Director","Map prep timelines for each department","Build the Prep Daily Schedule","Track hiring, onboarding, contracts, document readiness","Coordinate location availability and logistics","Follow up on equipment, transport, accommodation","Flag scheduling conflicts, delays, dependencies early","Maintain a dependency tracker (fittings, rehearsals, recce, tests…)"],
+     rules:["Schedule must be realistic and aligned with approved scope","No department works on conflicting timelines","Shooting schedule approved by Director + Production","Dependencies identified before locking schedule","No assumptions — all availability confirmed","Any delay or conflict flagged immediately","Schedule changes require re-alignment across departments","Schedule is the single source of truth — no parallel versions","Prep completed before shoot — no overlap without approval","All updates communicated clearly and documented"],
+     check:["Overall prep + production schedule built","Milestones aligned across departments","Shooting schedule prepared (Director + 1st AD)","Department prep timelines mapped","Prep Daily Schedule created and shared","Hiring, onboarding, contracts tracked","Location availability aligned with schedule","Equipment, transport, accommodation tracked","Final readiness meeting before Day 1"],
+     approve:["COO"], stake:["Coordinators","1st AD","PM","PFM"]}
+  ]
+},
+{
+  phase:"Onboarding & Pre-Production", no:"Phase 2.5", desc:"The general talent/crew workflow from onboarding link to the day before Day 1.",
+  steps:[
+    {title:"Negotiation & Onboarding", sub:"Initial talent list to deal agreed", board:"Monday > Content and requirements",
+     tasks:["Prepare initial talent list (template)","Add proposed names","Confirm names with TCS COO","Producer checks & negotiates","Explain main terms","Update status: Deal Agreed","Optional HOD alignment","Send onboarding form"],
+     rules:["Verbal & written terms communicated by producer to cast/crew","Cast & crew informed and agreed with the terms (written)","No onboarding → no contract → no work"],
+     check:["Initial talent list prepared","Names confirmed with COO","Terms explained and agreed (written)","Status updated to Deal Agreed","Onboarding form sent"],
+     approve:["CEO","COO","Client"], stake:["PFM","Producer","Production Coordinator"]},
+    {title:"Send to Boards — Legal, Rooming & Travel", sub:"Process the submitted onboarding form", board:"Monday > Onboarding > Send to > Legal",
+     tasks:["Update status: Form Sent → Talent completes form","Review submitted forms","Send talent documents to Drive","Add stay / per diem / travel details","Generate NDAs & verify documents","Distribute to relevant boards","Share crew | cast booklet"],
+     rules:["No deal memo approval → no contract draft","All agreements signed before Day 1","All data accurate and legally compliant","No travel or hotel booking without verified onboarding"],
+     check:["Forms reviewed and verified","Documents sent to Drive","Stay / per diem / travel details added","NDAs generated & documents verified","Distributed to relevant boards"],
+     approve:["PFM","Producer"], stake:["Production Coordinator","Legal","PFM"]},
+    {title:"Crew & Cast Verification / Contract Prep", sub:"Deal memos, contracts and signatures", board:"Monday > Onboarding > Legal Agreements",
+     tasks:["Review all onboarding information for completeness/accuracy","Fill stay details, per diem, travel requirements","Generate and send NDAs","Verify crew and cast details","Add hotel/travel deals to travel & rooming boards after verification","Send the verified list to Legal","Prepare contracts based on PFM deal memos","Obtain TCS executive approval on deal memos","Review and approve contract drafts (PFM and EP)","Send contracts for signature (DocuSign)","Track pending signatures and follow up before Day 1","Add last-minute hires immediately into tracking","Send cast contracts to Client / TV"],
+     rules:["Written agreement after the verbal communication","No deal memo approval → no contract draft","All agreements signed before Day 1","Verbal agreements not valid without written confirmation","No travel/hotel booking without verified onboarding","Last-minute hires follow the same full process — no exceptions"],
+     check:["Talent informed about accommodation","Talent informed about shooting days / dates","All onboarding details verified and complete","NDAs signed before contract stage","Deal memos approved prior to contract drafting","Contracts issued with correct terms","All signatures secured before Day 1","Travel & accommodation shared with relevant talent","No missing or pending critical documents"],
+     approve:["COO","Producer","PFM"], stake:["Producer / PFM","Coordinator"]},
+    {title:"Rooming & Travel Coordination", sub:"Travel board, rooming and transport", board:"Travel & Rooming Boards",
+     tasks:["Add approved talent to the travel board","Confirm flight options and bookings with the agency","Fill ticket, visa, and booking details","Schedule arrival / departure transport and assign drivers","Send travel welcome letter / staying type / per diem guidance","Add approved talent to the rooming board","Confirm room type, notes, roommates","Share the rooming list with the hotel","Send travel details to agent (if available)"],
+     rules:["No travel or hotel booking without verified onboarding","All bookings documented and centralized","Any change in travel requires re-confirmation"],
+     check:["Talent added to travel & rooming boards","Flights confirmed, tickets/visa logged","Transport scheduled and drivers assigned","Rooming list shared with hotel","Welcome letter & stay details shared"],
+     approve:["Producer","PFM"], stake:["Production Coordinator","PFM"]},
+    {title:"Pre-Onboarding — Before Day 1", sub:"Final readiness sweep before the shoot", board:"General Workflow",
+     tasks:["Follow up on scene-by-scene call sheet with Directing Dept","Share the call sheet with the client / TV","Send a PDF booklet (photos, names, roles of crew & cast)","Arrange cast training, if required","Confirm transport plan is locked, shared with drivers, aligned with moves","Recheck the rooming list","Recheck all contracts and follow up on pending signatures","Triple-check all crew fully onboarded (esp. last-minute hires)","Confirm each department shared final readiness status","Confirm permits, access, gate passes, clearances in Drive & shared with PM","Complete the final logistics check","Send a final message to crew and cast groups before Day 1"],
+     rules:["All agreements signed before Day 1","Everyone informed, ready, and all materials shared","Day 1: distribute merch"],
+     check:["Call sheet followed up and shared with client","Crew | cast booklet sent","Transport plan locked and shared","Rooming list rechecked","All contracts signed / pending followed up","All crew fully onboarded","Department readiness confirmed","Permits & clearances in Drive","Final logistics check complete","Final message sent to groups"],
+     approve:["Producer","PM"], stake:["Production Coordinator","PM","1st AD"]}
+  ]
+},
+{
+  phase:"Shooting", no:"Phase 3", desc:"Daily production duties during the shoot — readiness, live tracking, reporting.",
+  steps:[
+    {title:"Daily Production Duties During Shoot", sub:"Run the day against the call sheet", board:"Resource > Direction Resources",
+     tasks:["Arrive ahead of schedule to coordinate setup and department placement","Confirm morning logistics with PM (call times, transport, parking, permits, access)","Confirm equipment deliveries, props arrival, catering timing","Monitor live production issues and solve operational problems quickly","Track actor delays, location issues, equipment failures, last-minute requests","Maintain department oversight (production, art, camera, location, crew, contracts)","Track movements, update schedule changes, communicate across the team","Coordinate cast posters / continuity with AD, Costume, Makeup","Review progress against schedule at end of day","Issue / complete daily production report & confirm next-day logistics","Ensure location managed throughout & restored at wrap","Liaise with casting director & PAs so all extras are confirmed and ready"],
+     rules:["Call sheet is the single source of truth for the day and must be followed","Any deviation must be confirmed and communicated immediately","Scene-by-scene tracking stays updated in real time","No department proceeds without confirmation of readiness","All logistics confirmed before the start of the shoot","Any delay, issue, or risk escalated immediately to PM/AD","Schedule updates valid only once communicated across departments","Continuity decisions aligned with AD, Costume, Makeup","Live operations take priority over admin updates during shooting","End-of-day report reflects accurate call sheet vs actual progress","No day complete until full wrap and site clearance confirmed"],
+     check:["Arrive early and confirm set readiness","Review call sheet and distribute updates","Confirm morning logistics with PM","Verify equipment, props, catering arrivals","All departments ready for shoot","Extras readiness confirmed with casting PAs","Scene-by-scene progress tracked","On-set issues managed in real time","Schedule updates communicated","Continuity supported","Daily production report issued","Full wrap and site clearance"],
+     approve:["COO","Producer"], stake:["Script Supervisor","AD's","Coordinators","PM"]},
+    {title:"Daily Report Cycle", sub:"Previous evening · day start · during · end of day", board:"Daily Production Report ×2 · Continuity · DIT",
+     tasks:["Previous evening: confirm achieved pages/scenes, carry-over, daily times","Previous evening: record incidents, issue DPR, update next-day plan, adjust travel","Day start: confirm next-day scenes, cast call times and movement","Day start: confirm location access, transport, parking, weather contingency","Day start: draft next day's call sheet, obtain approvals, issue final call sheet","During the day: track progress against plan, record delays and causes","During the day: assess overtime risk, notify departments of live adjustments","End of day: confirm crew & cast arrival, resolve transport/holding issues","End of day: confirm set & equipment readiness, record urgent escalations"],
+     rules:["Issue Daily Production Report ×2","Maintain Daily Continuity Report","Maintain Daily DIT Report","Notify post on priority items where needed"],
+     check:["Achieved pages / scenes confirmed","Incidents and issues recorded","DPR issued","Next-day call sheet drafted and approved","Delays and causes logged","Departments notified of adjustments","Next-day logistics confirmed"],
+     approve:["COO","Producer","PM / AD"], stake:["AD's","Script Supervisor","DIT","Coordinators"]}
+  ]
+},
+{
+  phase:"Post-Production", no:"Phase 4", desc:"From rough cut to master delivery, plus marketing and BTS support.",
+  steps:[
+    {title:"Strategic Cut Approval", sub:"Layered approval from internal pass to client", board:"Approval Workflow",
+     tasks:["Director / editor internal pass","Post Supervisor / Executive Producer pass","Client / broadcaster pass where applicable","Consolidated notes issued","Revised version prepared"],
+     rules:["All assets tracked and confirmed with Post Producer before approval","Version control maintained for all deliverables (no overwritten files)","Only approved, finalized materials used for external release","No post phase complete without formal sign-off"],
+     check:["Director / editor internal pass complete","Post Supervisor / EP pass complete","Client / broadcaster pass (if applicable)","Consolidated notes issued","Revised version prepared"],
+     approve:["Post Supervisor / EP","Client / Broadcaster"], stake:["Director / Editor","Post Production Supervisor","Executive Producer"]},
+    {title:"Finishing & Master Delivery", sub:"Sound, VFX, music, grading, M&E, mastering", board:"Master Delivery",
+     tasks:["Final cut conform","Sound design and mix","VFX completion","Music integration","Color grading","Prepare M&E (music & effects)","Subtitles","Archive","Mastering & master delivery","Prepare cue sheets"],
+     rules:["All assets tracked and confirmed with Post Producer before approval","Version control maintained (no overwritten files)","Only approved, finalized materials used externally","Final delivery requires full confirmation of assets, credits, paperwork"],
+     check:["Final cut locked","Sound, music, VFX complete","Grading complete","M&E prepared","Subtitles delivered","Cue sheets prepared","Master delivered and archived"],
+     approve:["COO","CEO"], stake:["Post Producer","Sound","VFX","Colorist"]},
+    {title:"Post-Production Support · Marketing & BTS", sub:"Credits, posters, BTS and final closure", board:"Resources > Creative",
+     tasks:["Work with the Post Producer; follow up on missing deliverables","Prepare and update the credit sheet as it appears in the film/series","Coordinate posters, posts, marketing / BTS deliverables with TV","Stay available for post requests (cast, crew, approvals, paperwork)","Support the project through final delivery closure","Share character cards with the actors","Share BTS content with the crew and cast","Follow up with and manage BTS and marketing content editors"],
+     rules:["All assets tracked and confirmed with Post Producer before approval","Credit sheet continuously updated and approved before final lock","No marketing or BTS content shared without approval","All cast/crew requests logged and handled through proper channels","Version control maintained for all deliverables","Only approved, finalized materials used for public release","Final delivery requires full confirmation of assets, credits, paperwork"],
+     check:["All assets confirmed with Post Producer","Credit sheet updated and approved","Posters & BTS coordinated with TV","Character cards shared with actors","BTS shared with crew and cast","Marketing editors managed","Final delivery closure supported"],
+     approve:["COO","CEO"], stake:["Marketing & PR / Branding","Content Creators","Coordinators","Post Production Supervisor"]}
+  ]
+},
+{
+  phase:"Wrap & Close-Out", no:"Phase 5", desc:"Wrap day, talent wrap journey, and full production close-out.",
+  steps:[
+    {title:"Wrap Day & Production Close-Out", sub:"Clear logistics, people and assets", board:"Monday.com Board",
+     tasks:["Confirm final shoot completion and wrap timing","Coordinate wrap hospitality (wrap cake / small celebration)","Confirm equipment returns and outstanding supplier collections (PM)","Confirm hotel check-outs, departures, final transport, rooming closure","Confirm cast collected all personal belongings before leaving","Confirm return of TCS items, if applicable","Confirm all departments wrapped, packed, labeled, returned items","Confirm crew & cast dismissed safely or sent home","Confirm transport for anyone traveling after wrap (airport/hotel/home)"],
+     rules:["No department leaves before proper wrap and sign-off","All equipment and assets returned or accounted for","No hotel or transport left unconfirmed","Crew and cast safety during dismissal is mandatory","All items packed, labeled, returned correctly","Any missing item reported immediately","No informal closures — all wrap documented","Wrap not complete until logistics, people, assets fully cleared"],
+     check:["Shoot officially wrapped and communicated","All equipment returned or scheduled","Suppliers cleared and collections completed","Hotels checked out and rooming closed","All transport confirmed and executed","Cast & crew belongings collected","Production assets returned","Departments fully wrapped (no pending items)","Crew and cast safely dismissed","No outstanding logistics or personnel gaps"],
+     approve:["CEO","COO"], stake:["Producer","PM","Production Coordinator","Department Heads","Location Manager","Travel Coordinator / Agency","Suppliers / Vendors"]}
+  ]
+}
+];
+
+/* =================== TALENT EXPERIENCE (cross-cutting layer) =================== */
+const TALENT = {
+  phase:"Talent Experience", no:"Across all phases", desc:"The care layer that runs in parallel with the whole production — onboarding to legacy.",
+  steps:[
+    {title:"Onboarding & First Impression Layer", sub:"Day 1 welcome and orientation", board:"Production Team",
+     tasks:["Personal welcome from production representative on Day 1","Introductions to key creative leads (director, AD, costume, makeup)","'Who to go to for what' simple guide for comfort and clarity"],
+     rules:["First impression sets the tone for the entire engagement","Every talent should feel expected and accounted for"],
+     check:["Personal Day 1 welcome delivered","Key creative leads introduced","Orientation guide shared"],
+     approve:["Production Team"], stake:["Production Team","Coordinators"]},
+    {title:"On-Set Comfort & Experience", sub:"Daily welfare and comfort", board:"Production Team",
+     tasks:["Daily check-in with talent (light personal welfare check)","Dedicated quiet / rest area availability communicated clearly","Small comfort touches (snacks, hydration, coffee/tea)","Cultural / dietary sensitivity checks handled discreetly"],
+     rules:["Comfort is communicated proactively, not on request","Sensitivity checks handled discreetly and respectfully"],
+     check:["Daily welfare check-ins running","Rest area communicated","Comfort touches available","Dietary / cultural needs handled"],
+     approve:["Production Team"], stake:["Production Team","Coordinators"]},
+    {title:"Respect & Engagement Layer", sub:"Schedule respect and genuine appreciation", board:"Production Team",
+     tasks:["Respectful communication of schedule intensity (long days / night shoots)","Informal appreciation moments during shoot days","Mid-shoot 'how are things going' check-in (experience-based)","On-set birthday / milestone acknowledgment (if applicable)","Light crew-cast interaction moments when appropriate"],
+     rules:["Appreciation is genuine and ongoing, not transactional","Intensity communicated honestly and respectfully"],
+     check:["Schedule intensity communicated respectfully","Appreciation moments delivered","Mid-shoot check-in done","Milestones acknowledged"],
+     approve:["Production Team"], stake:["Production Team","Director"]},
+    {title:"Memory & Legacy Layer", sub:"Wrap journey and a proper goodbye", board:"Production Team",
+     tasks:["Controlled BTS photo/video sharing (approved only)","Optional behind-the-scenes group photos during key moments","Personal 'wrap journey' documentation (final-day reflection)","End-of-shoot appreciation message from production team","Personal acknowledgment that it's their final day","Clear 'closure moment' (last scene / wrap acknowledgment)","Direct thank-you from director / production","Time for proper goodbyes (not rushed)","Organized wrap photos / final moments captured","Small wrap token or merch (if applicable)","Final appreciation message or note"],
+     rules:["BTS shared only when approved","Goodbyes are never rushed","Every talent leaves with a clear closure moment"],
+     check:["Closure moment delivered","Direct thank-you given","Wrap photos captured","Final appreciation message sent","Wrap token shared (if applicable)"],
+     approve:["Production Team"], stake:["Production Team","Director","Coordinators"]}
+  ]
+};
+
+/* =================== MONDAY.COM TOOL LAYER (V5_Workspace Template) =================== */
+/* Keyed by step title. board = board name; pipe = status pipeline (last = done);
+   chips = key data captured; auto = automation buttons; integ = integrations. */
+const TOOLS = {
+  "Script Development":{board:"TMP_Resources",role:"Script Resources group",pipe:["In Progress","Available","Done"],chips:["Attachment + Revision files","Version control"],auto:[],integ:["3-tier approval: Internal → Jasem → Client"]},
+  "Moodboard":{board:"TMP_Resources",role:"Creative Resources group",pipe:["In Progress","Approved"],chips:["Visual references","File revisions"],auto:[],integ:["Client approval status"]},
+  "Vision Development — Key Creative HODs":{board:"TMP_Scouting",role:"Creative Alignment group",pipe:["In Progress","Pending","Done"],chips:["Production Design","Costume","Makeup","SFX","Music"],auto:[],integ:["Fitting Form (public)"]},
+  "Strategic Approval":{board:"TMP_Resources",role:"Approval across resources",pipe:["Need Approval","In Progress","Approved"],chips:["GO / REVISE / REJECT per item"],auto:[],integ:["Client approval status"]},
+  "Budget Finalization & Approvals":{board:"TMP_Payment Requests",role:"Finance pipeline",pipe:["Pending","Incomplete Info","Complete"],chips:["Multi-currency → USD auto-convert","Priority flags"],auto:[],integ:["Payment Request Form (public)"]},
+  "Casting & Talent Lock":{board:"TMP_Casting",role:"Auditioned → Main / Secondary / Extras",pipe:["Hold","Approved","Reject"],chips:["In-character photos","Audition files","G|A|H|W","Allergies & preferences (subitems)"],auto:[],integ:["Casting Form (public)","Client Approval"]},
+  "Initial Crew List & Hiring Plan":{board:"TMP_Onboarding",role:"Incoming from Form group",pipe:["Required","Working on it","Incomplete","Verified & Confirmed"],chips:["21-department taxonomy","EID / passport / visa","Contractor type"],auto:["Send onboarding link"],integ:["Onboarding Form (public)"]},
+  "Hard Prep — Logistics & Operations Setup":{board:"TMP_Scouting",role:"Scouting + Locations",pipe:["In Progress","Pending","Hold","Done"],chips:["Location photos","Map pins","'For which set' tagging"],auto:[],integ:["Scouting Form (public)"]},
+  "Scheduling & Preparation":{board:"TMP_Schedules",role:"Project / Prep / Production / Post groups",pipe:["Scheduled","Postponed","Done"],chips:["Timeline + Gantt views","Call times","Crew & depts involved","Driver / pickup layer"],auto:[],integ:["Production Tracker view"]},
+  "Negotiation & Onboarding":{board:"TMP_Onboarding",role:"Deal alignment",pipe:["Form Sent","Working on it","Verified & Confirmed"],chips:["Proposed names","Main terms"],auto:["Send onboarding form"],integ:["Onboarding Form (public)"]},
+  "Send to Boards — Legal, Rooming & Travel":{board:"TMP_Onboarding",role:"Verification → distribution hub",pipe:["Working on it","Incomplete","Verified & Confirmed"],chips:["Identity, bank, travel terms","NDA acknowledgement + signature"],auto:["Generate NDA","Verification","Legal","Travel Journey","Rooming Journey","Archive to Google Drive"],integ:["DocuSign","WhatsApp","Google Drive"]},
+  "Crew & Cast Verification / Contract Prep":{board:"TMP_Legal / Finance",role:"Contract engine",pipe:["Drafting","Draft Ready","Sent","Partially Signed","Signed","Completed"],chips:["Deal memo + contract","Payment subitems → live balance","Auth. signatory"],auto:["Generate EN Draft","Generate AR Draft","CDW AR","Generate DM","To Archive"],integ:["DocuSign","Dual approval: Finance + Exec Producer","Google Drive"]},
+  "Rooming & Travel Coordination":{board:"TMP_Travel Journey  +  TMP_Rooming List",role:"Travel + accommodation engine",pipe:["Scheduled","Finished","Cancelled"],chips:["Flights, terminals, booking ref, class","Visa status","Room class, roommate, check-in/out","Driver / pickup-dropoff layer"],auto:[],integ:["Pulls verified talent via board-relation","Rooming Manager view"]},
+  "Pre-Onboarding — Before Day 1":{board:"TMP_Onboarding  +  TMP_Schedules",role:"Final readiness sweep",pipe:["Working on it","Verified & Confirmed"],chips:["Crew | cast booklet","Call sheet follow-up","Contract signature check"],auto:["Send Greeting","Archive to Google Drive"],integ:["WhatsApp","Google Drive"]},
+  "Daily Production Duties During Shoot":{board:"TMP_Schedules",role:"Production Schedule + Drivers groups",pipe:["Scheduled","Postponed","Cancelled","Done"],chips:["Scene-by-scene call sheet","Driver / pickup / dropoff","Departments involved"],auto:[],integ:["Production Tracker view","Gantt"]},
+  "Daily Report Cycle":{board:"TMP_Schedules",role:"Daily tracking",pipe:["Scheduled","Done"],chips:["DPR ×2","Continuity report","DIT report","Delays & causes"],auto:[],integ:["Production Tracker view"]},
+  "Wrap Day & Production Close-Out":{board:"TMP_Rooming List  +  TMP_Travel Journey",role:"Check-out + departure closure",pipe:["Active","Checked Out"],chips:["Hotel check-outs","Final transport","Asset returns"],auto:[],integ:["Rooming Manager view"]},
+  "Onboarding & First Impression Layer":{board:"TMP_Rooming List",role:"Hospitality layer",pipe:["In Progress","Done"],chips:["VIP consideration","Hospitality status"],auto:[],integ:["Send Greeting (Onboarding)"]},
+  "On-Set Comfort & Experience":{board:"TMP_Onboarding",role:"Talent care data",pipe:["In Progress","Done"],chips:["Dietary / medical condition","T-shirt size","Allergies (Casting subitems)"],auto:[],integ:["WhatsApp greetings"]}
+};
+
+function toolBand(title){
+  const t=TOOLS[title]; if(!t) return '';
+  let pipe='';
+  if(t.pipe&&t.pipe.length){
+    pipe=`<div class="tb-cell"><h6>Status Pipeline</h6><div class="tb-pipe">`+
+      t.pipe.map((s,i)=>`<span class="tb-stage${i===t.pipe.length-1?' done':''}">${s}</span>`+(i<t.pipe.length-1?'<span class="tb-arrow">→</span>':'')).join('')+`</div></div>`;
+  }
+  let chips='';
+  if(t.chips&&t.chips.length){
+    chips=`<div class="tb-cell"><h6>Captured in the board</h6><div>`+
+      t.chips.map(c=>`<span class="tb-chip"><b></b>${c}</span>`).join('')+`</div></div>`;
+  }
+  let auto='';
+  if(t.auto&&t.auto.length){
+    auto=`<div class="tb-cell"><h6>Automation buttons</h6><div class="tb-auto">`+
+      t.auto.map(a=>`<span class="tb-btn${/legal|travel|rooming|verification/i.test(a)?' alt':''}">${a}</span>`).join('')+`</div></div>`;
+  }
+  let integ='';
+  if(t.integ&&t.integ.length){
+    integ=`<div class="tb-cell"><h6>Integrations & rules</h6><div>`+
+      t.integ.map(c=>`<span class="tb-chip"><b></b>${c}</span>`).join('')+`</div></div>`;
+  }
+  return `<div class="toolband">
+    <div class="toolband-head"><span class="mlogo"></span><h5>Powered in monday.com</h5><span class="tb-board">${t.board}</span><span style="font-size:12px;color:var(--muted)">· ${t.role}</span></div>
+    <div class="tb-grid">${pipe}${chips}${auto}${integ}</div>
+  </div>`;
+}
+
+const ALL = [...DATA, TALENT];
+
+/* =================== RENDER =================== */
+const main = document.getElementById('main');
+const phasenav = document.getElementById('phasenav');
+
+ALL.forEach((p,i)=>{
+  const b=document.createElement('button');
+  b.className='pnav'+(i===0?' active':'');
+  b.innerHTML=`<div class="pn">${p.no}</div><div class="pt">${p.phase}</div>`;
+  b.onclick=()=>showPhase(i);
+  phasenav.appendChild(b);
+});
+/* System tab */
+const sysBtn=document.createElement('button');
+sysBtn.className='pnav';
+sysBtn.innerHTML=`<div class="pn">Tooling</div><div class="pt">The System</div>`;
+sysBtn.onclick=()=>showSystem();
+phasenav.appendChild(sysBtn);
+
+function stepHTML(s,idx){
+  const li=(arr,cls='')=>arr.map(x=>`<li>${x}</li>`).join('');
+  const pills=(arr,gold=false)=>arr.map(x=>`<span class="pill${gold?' gold':''}">${x}</span>`).join('');
+  return `<div class="step">
+    <div class="step-head" onclick="this.parentElement.classList.toggle('open');const b=this.nextElementSibling;b.style.maxHeight=this.parentElement.classList.contains('open')?b.scrollHeight+'px':null;">
+      <span class="step-idx">${String(idx+1).padStart(2,'0')}</span>
+      <span class="step-title"><h3>${s.title}</h3><div class="sub">${s.sub}</div></span>
+      ${TOOLS[s.title]?`<span class="step-board">● monday.com</span>`:(s.board?`<span class="step-board">${s.board}</span>`:'')}
+      <span class="step-toggle">+</span>
+    </div>
+    <div class="step-body">
+      <div class="grid">
+        <div class="col left">
+          <div class="block" style="--mark:var(--task)"><h4><b style="background:var(--task)"></b>Tasks</h4><ul>${li(s.tasks)}</ul></div>
+          <div class="block check"><h4><b style="background:var(--check)"></b>Checklist</h4><ul>${li(s.check)}</ul></div>
+        </div>
+        <div class="col right">
+          <div class="block" style="--mark:var(--rule)"><h4><b style="background:var(--rule)"></b>Rules</h4><ul>${li(s.rules)}</ul></div>
+          <div class="block"><h4><b style="background:var(--approve)"></b>Approval Layer</h4><div class="pills">${pills(s.approve,true)}</div></div>
+          <div class="block"><h4><b style="background:var(--stake)"></b>Stakeholders</h4><div class="pills">${pills(s.stake)}</div></div>
+        </div>
+      </div>
+      <div style="padding:0 28px 26px">${toolBand(s.title)}</div>
+    </div>
+  </div>`;
+}
+
+function showPhase(i){
+  document.querySelectorAll('.pnav').forEach((n,j)=>n.classList.toggle('active',j===i));
+  const p=ALL[i];
+  main.innerHTML=`
+    <div class="phase-header">
+      <div class="ph-left"><div class="ph-no">${p.no}</div><h2>${p.phase}</h2></div>
+      <div class="ph-desc">${p.desc}</div>
+    </div>
+    <div class="controls">
+      <button class="ctl" onclick="openAll()">Expand all</button>
+      <button class="ctl" onclick="closeAll()">Collapse all</button>
+    </div>
+    <div id="steps">${p.steps.map((s,idx)=>stepHTML(s,idx)).join('')}</div>
+    ${i===1?splitHTML():''}`;
+  window.scrollTo({top:document.querySelector('.phasenav').offsetTop-66,behavior:'smooth'});
+}
+
+const BOARDS=[
+  {name:"TMP_Onboarding",role:"The spine — single intake",desc:"One public form captures every person once: identity, passport/EID, residency, bank details, travel terms, NDA signature. A verification pipeline gates everything, then automation buttons push the record onward.",meta:"<b>Groups:</b> Incoming from Form · Suppliers · NDA · Deactivated &nbsp;|&nbsp; <b>Buttons:</b> Generate NDA · Verification · Legal · Travel · Rooming · Archive"},
+  {name:"TMP_Legal / Finance",role:"Contract engine",desc:"Pulls verified talent from Onboarding. Runs dual approval (Finance + Exec Producer) and a full DocuSign lane. Payment subitems roll up Requested / Paid / Balance with auto USD conversion.",meta:"<b>Pipeline:</b> Drafting → Draft Ready → Sent → Partially Signed → Signed → Completed &nbsp;|&nbsp; <b>Buttons:</b> EN/AR Draft · Deal Memo · Archive"},
+  {name:"TMP_Payment Requests",role:"Money pipeline",desc:"Public form for supplier/freelancer payments and petty cash. Routed through Finance Review → Producer Approval, multi-currency auto-convert, closed with a transfer slip.",meta:"<b>Pipeline:</b> Pending → Incomplete → Complete &nbsp;|&nbsp; <b>Streams:</b> Supplier/FL · Petty Cash"},
+  {name:"TMP_Travel Journey",role:"Travel + transport engine",desc:"Auto-receives verified talent. Visa tracking at item level; flight detail per trip (airline, terminals, booking ref, class, baggage) plus a driver / pickup-dropoff layer that doubles as ground transport.",meta:"<b>Trip status:</b> Scheduled → Finished / Cancelled &nbsp;|&nbsp; <b>View:</b> Traveler Logistics · Drivers"},
+  {name:"TMP_Rooming List",role:"Accommodation engine",desc:"Auto-receives verified talent. Hotel, room class, check-in/out timeline, roommate, and a VIP / hospitality layer. Subitems track actual occupancy and bed type.",meta:"<b>Stay status:</b> Scheduled → Checked In → Active → Checked Out &nbsp;|&nbsp; <b>View:</b> Rooming Manager"},
+  {name:"TMP_Schedules",role:"Master schedule",desc:"The production calendar — prep, shoot, post, drivers, locations, team. Timeline + Gantt + Production Tracker. Subitems carry call times, crew, departments and per-task transport.",meta:"<b>Groups:</b> Project · Soft/Hard Prep · Production · Post · Drivers · Locations · Team · Departments"},
+  {name:"TMP_Casting",role:"Casting pipeline",desc:"Audition intake via public form through to cast lock, with client approval gating. In-character photos, audition files, and per-candidate preferences as subitems.",meta:"<b>Groups:</b> Auditioned · Main · Secondary · Special Appearance · Extras &nbsp;|&nbsp; <b>Gate:</b> Client Approval"},
+  {name:"TMP_Scouting",role:"Creative & locations",desc:"Creative alignment plus location scouting — production design, costume, makeup, SFX, music. Location photos, map pins, set tagging, with Scouting and Fitting forms.",meta:"<b>Groups:</b> Creative Alignment · Production Design · Costume · Makeup · SFX · Music · Scouting"},
+  {name:"TMP_Resources",role:"Document library",desc:"The file backbone — script, direction, creative, logistics, production design. Each item carries a three-tier approval (Internal → Jasem → Client) and versioned revisions.",meta:"<b>Approval:</b> Internal → Jasem → Client &nbsp;|&nbsp; <b>Files:</b> Attachment + Revision history"}
+];
+
+function showSystem(){
+  document.querySelectorAll('.pnav').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.pnav')[ALL.length].classList.add('active');
+  main.innerHTML=`
+    <div class="phase-header">
+      <div class="ph-left"><div class="ph-no">The Tooling Layer</div><h2>The System</h2></div>
+      <div class="ph-desc">Every step above runs on one connected monday.com workspace — the V5 Production Template.</div>
+    </div>
+    <p class="sys-intro">The workflow isn't a document people are asked to follow — it's built into nine connected boards. A person is entered <b>once</b> through an intake form, verified, and then handed automatically from board to board. Status pipelines enforce the gates; automation buttons move the work; forms, DocuSign, WhatsApp and Google Drive are wired in. Nothing depends on memory or a verbal yes.</p>
+
+    <div class="sys-flowline">
+      <span class="sys-node">Public Form</span><span class="tb-arrow">→</span>
+      <span class="sys-node">Onboarding</span><span class="tb-arrow">→</span>
+      <span class="sys-node">Verification</span><span class="tb-arrow">→</span>
+      <span class="sys-node">Legal / Finance</span><span class="tb-arrow">→</span>
+      <span class="sys-node">Travel</span><span class="tb-arrow">+</span>
+      <span class="sys-node">Rooming</span><span class="tb-arrow">→</span>
+      <span class="sys-node">Google Drive Archive</span>
+    </div>
+
+    <div class="board-cards">
+      ${BOARDS.map(b=>`<div class="bcard">
+        <div class="bcard-top"><span class="mlogo"></span><h4>${b.name}</h4></div>
+        <div class="role">${b.role}</div>
+        <p>${b.desc}</p>
+        <div class="bmeta">${b.meta}</div>
+      </div>`).join('')}
+    </div>
+
+    <div class="sys-foot">
+      <div class="ff"><b>Shared taxonomy</b><p>A single 21-department list (Script, Direction, Cast, Production, Set Design, H&MU, Wardrobe, SFX, Camera, Lighting, Sound, Grip, and more) tags everyone once and filters across every board.</p></div>
+      <div class="ff"><b>Intake forms</b><p>Public WorkForms feed Onboarding, Payments, Casting, Scouting and Fittings — no app required for cast, crew, suppliers or daily workers.</p></div>
+      <div class="ff"><b>Live integrations</b><p>DocuSign for contracts, WhatsApp send buttons for talent comms, and Google Drive archiving — all triggered from the boards.</p></div>
+      <div class="ff"><b>Board-relations</b><p>Legal, Travel and Rooming pull verified records straight from Onboarding, so data is entered once and mirrors everywhere it's needed.</p></div>
+    </div>`;
+  window.scrollTo({top:document.querySelector('.phasenav').offsetTop-66,behavior:'smooth'});
+}
+
+function splitHTML(){
+  return `<div class="split">
+    <h4>Core Documents & Responsibility Split</h4>
+    <div class="split-grid">
+      <div><b>TCS Production Team</b><p>Prep daily schedule, transport sheet, cast/crew lists, allergies/medical list, rooming & travel lists, weekly production report, onboarding & document trackers, Drive organization, communication groups, contracts, releases, location agreements, clearances, letters.</p></div>
+      <div><b>Creative / AD Department</b><p>Script breakdown, shooting schedule, daily call sheets, sides, cast & extras requirements, and ongoing schedule updates and coordination.</p></div>
+      <div><b>Script Supervisor</b><p>Continuity notes, scene continuity tracking, daily script notes, and continuity reports for production and post.</p></div>
+      <div><b>Creative Departments</b><p>Departmental breakdowns, moodboards, wardrobe plans & fittings, set design, props lists, H&MU looks and tests, scene-specific requirements, readiness updates.</p></div>
+      <div><b>PM</b><p>Equipment list, technical recce follow-up, movement planning, and risk assessment where required.</p></div>
+      <div><b>PFM</b><p>Deal memos, financial approval support, budget tracking, cost approvals, supplier/crew payment coordination, per diem, petty cash, invoice tracking, financial reporting.</p></div>
+    </div>
+  </div>`;
+}
+
+function openAll(){document.querySelectorAll('#steps .step').forEach(s=>{s.classList.add('open');const b=s.querySelector('.step-body');b.style.maxHeight=b.scrollHeight+'px';});}
+function closeAll(){document.querySelectorAll('#steps .step').forEach(s=>{s.classList.remove('open');s.querySelector('.step-body').style.maxHeight=null;});}
+
+showPhase(0);
+</script>
+</body>
+</html>
